@@ -19,7 +19,6 @@ def main():
     args = parser.parse_args()
     best_acc = 0
     at_type = ['self-attention', 'self_relation-attention'][args.at_type]
-    logger = util.Logger('./log/','fan_afew')
     logger.print('The attention method is {:}, learning rate: {:}'.format(at_type, args.lr))
     
     ''' Load data '''
@@ -160,5 +159,7 @@ def val(val_loader, model, at_type):
         topVideo.update(acc_video[0], i + 1)
         logger.print(' *Acc@Video {topVideo.avg:.3f} '.format(topVideo=topVideo))
         return topVideo.avg
+    
 if __name__ == '__main__':
+    logger = util.Logger('./log/','fan_afew')
     main()
