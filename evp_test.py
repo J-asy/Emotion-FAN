@@ -20,26 +20,117 @@ def main():
     args = parser.parse_args()
     best_acc = 0
     at_type = ['self-attention', 'self_relation-attention'][args.at_type]
-    logger = util.Logger('./log/','fan_ckplus')
+    
     logger.print('The attention method is {:}, learning rate: {:}'.format(at_type, args.lr))
     ''' Load data '''
-    video_root = './data/face/ck_face'
-    video_list = './data/txt/EVP_test.txt'
+    video_root = '/content/drive/MyDrive/FER/ck_face'
+    video_list = './data/txt/CK+_10-fold_sample_IDascendorder_step10.txt'
     batchsize_train= 48
     batchsize_eval= 64
     train_loader, val_loader = load.ckplus_faces_fan(video_root, video_list, args.fold, batchsize_train, batchsize_eval)
     ''' Load model '''
     _structure = networks.resnet18_at(at_type=at_type)
-    _parameterDir = './pretrain_model/Resnet18_FER+_pytorch.pth.tar'
+    _parameterDir = '/content/drive/MyDrive/FER/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
     model = load.model_parameters(_structure, _parameterDir)
     ''' Loss & Optimizer '''
     optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.2)
     cudnn.benchmark = True
-    ''' Eval '''
-    val(val_loader, model, logger)
-    
+    ''' Train & Eval '''
+    if args.evaluate == True:
+        logger.print('args.evaluate: {:}', args.evaluate)        
+        val(val_loader, model, logger)
+        return
+    logger.print('frame attention network (fan) train dataset; test evp, learning rate: {:}'.format(args.lr))
+
+    for epoch in range(args.epochs):
+        train(train_loader, model, optimizer, epoch)
+        acc_epoch = val(val_loader, model, at_type)
+        is_best = acc_epoch > best_acc
+        if is_best:
+            logger.print('better model!')
+            best_acc = max(acc_epoch, best_acc)
+            util.save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'accuracy': acc_epoch,
+            }, at_type=at_type)
+
+        lr_scheduler.step()
+        logger.print("epoch: {:} learning rate:{:}".format(epoch+1, optimizer.param_groups[0]['lr']))
         
+    ''' Eval on EVP '''
+    logger.print("Start testing on EVP")
+    video_root = '/content/drive/MyDrive/FER/evp_face'
+    video_list = '/content/drive/MyDrive/FER/EVP_txt.txt'
+    batchsize_eval= 64
+    val_loader = load.evp_faces_fan(video_root, video_list, 1, batchsize_eval)
+    
+    quit_flag = 0
+    while not quit_flag:
+        acc_epoch = val(val_loader, model, at_type)
+        # get confusion matrix ...
+        quit_flag = int(input("Test again? "))
+        
+        
+def train(train_loader, model, optimizer, epoch):
+    losses = util.AverageMeter()
+    topframe = util.AverageMeter()
+    topVideo = util.AverageMeter()
+
+    # switch to train mode
+    output_store_fc = []
+    target_store = []
+    index_vector = []
+
+    model.train()
+    for i, (input_first, input_second, input_third, target_first, index) in enumerate(train_loader):
+        target_var = target_first.to(DEVICE)
+        input_var = torch.stack([input_first, input_second , input_third], dim=4).to(DEVICE)
+        # compute output
+        ''' model & full_model'''
+        pred_score = model(input_var)
+        loss = F.cross_entropy(pred_score, target_var)
+        loss = loss.sum()
+        #
+        output_store_fc.append(pred_score)
+        target_store.append(target_var)
+        index_vector.append(index)
+        # measure accuracy and record loss
+        acc_iter = util.accuracy(pred_score.data, target_var, topk=(1,))
+        losses.update(loss.item(), input_var.size(0))
+        topframe.update(acc_iter[0], input_var.size(0))
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+
+        if i % 200 == 0:
+            logger.print('Epoch: [{:3d}][{:3d}/{:3d}]\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Acc@1 {topframe.val:.3f} ({topframe.avg:.3f})\t'
+                .format(
+                epoch, i, len(train_loader), loss=losses, topframe=topframe))
+
+    index_vector = torch.cat(index_vector, dim=0)  # [256] ... [256]  --->  [21570]
+    index_matrix = []
+    for i in range(int(max(index_vector)) + 1):
+        index_matrix.append(index_vector == i)
+
+    index_matrix = torch.stack(index_matrix, dim=0).to(DEVICE).float()  # [21570]  --->  [380, 21570]
+    output_store_fc = torch.cat(output_store_fc, dim=0)  # [256,7] ... [256,7]  --->  [21570, 7]
+    target_store = torch.cat(target_store, dim=0).float()  # [256] ... [256]  --->  [21570]
+    pred_matrix_fc = index_matrix.mm(output_store_fc)  # [380,21570] * [21570, 7] = [380,7]
+    target_vector = index_matrix.mm(target_store.unsqueeze(1)).squeeze(1).div(
+        index_matrix.sum(1)).long()  # [380,21570] * [21570,1] -> [380,1] / sum([21570,1]) -> [380]
+
+    acc_video = util.accuracy(pred_matrix_fc.cpu(), target_vector.cpu(), topk=(1,))
+    topVideo.update(acc_video[0], i + 1)
+    logger.print(' *Acc@Video {topVideo.avg:.3f}   *Acc@Frame {topframe.avg:.3f} '.format(topVideo=topVideo, topframe=topframe))
+
+
 def val(val_loader, model, at_type):
     topVideo = util.AverageMeter()
 
@@ -89,4 +180,5 @@ def val(val_loader, model, at_type):
         return topVideo.avg
 
 if __name__ == '__main__':
+    logger = util.Logger('./log/','fan_evp')
     main()
