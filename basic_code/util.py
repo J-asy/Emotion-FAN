@@ -5,7 +5,7 @@ from pathlib import Path
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
-def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
+def accuracy(output, target, topk=(1,), show_confusion_matrix=False, write_confusion_matrix=False):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
     batch_size = target.size(0)
@@ -25,6 +25,7 @@ def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
         print(conf_m_norm)
         print()
         
+    if write_confusion_matrix:
         conf_m_str = "\nConfusion matrix\n" + "".join([str(row) + "\n" for row in conf_m])
         logger.write(conf_m_str)
         
