@@ -3,6 +3,7 @@ import time
 import torch
 from pathlib import Path
 from sklearn.metrics import confusion_matrix
+import numpy as np
 
 def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
     """Computes the precision@k for the specified values of k"""
@@ -16,6 +17,12 @@ def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
         conf_m = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6])
         print("Confusion matrix:")
         print(conf_m)
+        print()
+
+        print("Confusion matrix (normalized):")
+        conf_m_norm = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6], normalize='all')
+        conf_m_norm = np.around(conf_m_norm, 4)
+        print(conf_m_norm)
         print()
 
     res = []
@@ -52,6 +59,7 @@ def save_checkpoint(state, at_type=''):
     save_dir = './model/'+at_type+'_' + str(epoch) + '_' + str(round(float(state['accuracy']), 4))
     torch.save(state, save_dir)
     print(save_dir)
+    return save_dir
     
 def time_now():
   ISOTIMEFORMAT='%d-%h-%Y-%H-%M-%S'
