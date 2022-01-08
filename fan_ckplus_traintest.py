@@ -60,7 +60,7 @@ def main():
         lr_scheduler.step()
         logger.print("epoch: {:} learning rate:{:}".format(epoch+1, optimizer.param_groups[0]['lr']))
     print("Final model save path:", last_save_dir)
-    
+
 def train(train_loader, model, optimizer, epoch):
     losses = util.AverageMeter()
     topframe = util.AverageMeter()
@@ -119,7 +119,7 @@ def train(train_loader, model, optimizer, epoch):
     logger.print(' *Acc@Video {topVideo.avg:.3f}   *Acc@Frame {topframe.avg:.3f} '.format(topVideo=topVideo, topframe=topframe))
 
 
-def val(val_loader, model, at_type):
+def val(val_loader, model, at_type, last_epoch):
     topVideo = util.AverageMeter()
 
     # switch to evaluate mode
@@ -161,7 +161,10 @@ def val(val_loader, model, at_type):
         if at_type == 'self_relation-attention':
             pred_score  = model(vectors=output_store_fc, vm=weightmean_sourcefc, alphas_from1=output_alpha, index_matrix=index_matrix, phrase='eval', AT_level='second_level')
 
-        acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,))
+        if last_epoch:
+          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True)
+        else:
+          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,))
         topVideo.update(acc_video[0], i + 1)
         logger.print(' *Acc@Video {topVideo.avg:.3f} '.format(topVideo=topVideo))
 
