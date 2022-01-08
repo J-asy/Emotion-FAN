@@ -85,7 +85,7 @@ def train(train_loader, model, optimizer, epoch):
         target_store.append(target_var)
         index_vector.append(index)
         # measure accuracy and record loss
-        acc_iter = util.accuracy(pred_score.data, target_var, topk=(1,))
+        acc_iter = util.accuracy(logger, pred_score.data, target_var, topk=(1,))
         losses.update(loss.item(), input_var.size(0))
         topframe.update(acc_iter[0], input_var.size(0))
 
@@ -114,7 +114,7 @@ def train(train_loader, model, optimizer, epoch):
     target_vector = index_matrix.mm(target_store.unsqueeze(1)).squeeze(1).div(
         index_matrix.sum(1)).long()  # [380,21570] * [21570,1] -> [380,1] / sum([21570,1]) -> [380]
 
-    acc_video = util.accuracy(pred_matrix_fc.cpu(), target_vector.cpu(), topk=(1,))
+    acc_video = util.accuracy(logger, pred_matrix_fc.cpu(), target_vector.cpu(), topk=(1,))
     topVideo.update(acc_video[0], i + 1)
     logger.print(' *Acc@Video {topVideo.avg:.3f}   *Acc@Frame {topframe.avg:.3f} '.format(topVideo=topVideo, topframe=topframe))
 
@@ -162,9 +162,9 @@ def val(val_loader, model, at_type, last_epoch):
             pred_score  = model(vectors=output_store_fc, vm=weightmean_sourcefc, alphas_from1=output_alpha, index_matrix=index_matrix, phrase='eval', AT_level='second_level')
 
         if last_epoch:
-          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True, write_confusion_matrix=True)
+          acc_video = util.accuracy(logger, pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True, write_confusion_matrix=True)
         else:
-          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), write_confusion_matrix=True)
+          acc_video = util.accuracy(logger, pred_score.cpu(), target_vector.cpu(), topk=(1,), write_confusion_matrix=True)
         topVideo.update(acc_video[0], i + 1)
         logger.print(' *Acc@Video {topVideo.avg:.3f} '.format(topVideo=topVideo))
 
