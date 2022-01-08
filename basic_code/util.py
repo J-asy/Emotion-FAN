@@ -28,7 +28,7 @@ def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
         conf_m_str = "\nConfusion matrix\n" + "".join([str(row) + "\n" for row in conf_m])
         logger.write(conf_m_str)
         
-        conf_m_norm_str = "\nConfusion matrix(normalized)" + "".join([str(row) + "\n" for row in conf_m_norm])
+        conf_m_norm_str = "\nConfusion matrix(normalized)\n" + "".join([str(row) + "\n" for row in conf_m_norm])
         logger.write(conf_m_norm_str)
 
     res = []
