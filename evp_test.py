@@ -24,7 +24,7 @@ def main():
     logger.print('The attention method is {:}, learning rate: {:}'.format(at_type, args.lr))
     ''' Load data '''
     video_root = './data/face/ck_face'
-    video_list = './data/txt/CK+_10-fold_sample_IDascendorder_step10.txt'
+    video_list = './data/txt/EVP_test.txt'
     batchsize_train= 48
     batchsize_eval= 64
     train_loader, val_loader = load.ckplus_faces_fan(video_root, video_list, args.fold, batchsize_train, batchsize_eval)
