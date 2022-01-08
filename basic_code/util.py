@@ -14,7 +14,7 @@ def accuracy(logger, output, target, topk=(1,), show_confusion_matrix=False, wri
     correct = pred.eq(target.view(1, -1).expand_as(pred))  # target.view(1,2,2,-1): (256,) -> (1, 2, 2, 64)
 
     conf_m = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6])
-    conf_m_norm = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6], normalize='all')
+    conf_m_norm = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6], normalize='true')
     conf_m_norm = np.around(conf_m_norm, 4)
     
     if show_confusion_matrix:
