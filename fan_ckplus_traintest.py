@@ -162,9 +162,9 @@ def val(val_loader, model, at_type, last_epoch):
             pred_score  = model(vectors=output_store_fc, vm=weightmean_sourcefc, alphas_from1=output_alpha, index_matrix=index_matrix, phrase='eval', AT_level='second_level')
 
         if last_epoch:
-          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True)
+          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True, write_confusion_matrix=True)
         else:
-          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,))
+          acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), write_confusion_matrix=True)
         topVideo.update(acc_video[0], i + 1)
         logger.print(' *Acc@Video {topVideo.avg:.3f} '.format(topVideo=topVideo))
 
