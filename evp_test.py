@@ -21,36 +21,27 @@ def main():
     args = parser.parse_args()
     best_acc = 0
     at_type = ['self-attention', 'self_relation-attention'][args.at_type]
-    
     logger.print('The attention method is {:}'.format(at_type))
+
     ''' Load data '''
-    video_root = '/content/drive/MyDrive/FER/ck_face'
-    video_list = './data/txt/CK+_10-fold_sample_IDascendorder_step10.txt'
-    batchsize_train= 48
-    batchsize_eval= 64
-    train_loader, val_loader = load.ckplus_faces_fan(video_root, video_list, args.fold, batchsize_train, batchsize_eval)
-    
-    ''' Load model '''
-    _structure = networks.resnet18_at(at_type=at_type)
-    _parameterDir = '/content/drive/MyDrive/FER/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
-    model = load.model_parameters(_structure, _parameterDir)
-    last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_5_100" # model pretrained on the ck+ dataset
-    x = torch.load(last_model_path)
-    model.load_state_dict(x['state_dict'])
-    
-    ''' Loss & Optimizer '''
-#     optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
-#     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.2)
-#     cudnn.benchmark = True
-       
-    ''' Eval on EVP '''
-    logger.print("Start testing on EVP")
     video_root = '/content/drive/MyDrive/FER/evp_face'
     video_list = '/content/drive/MyDrive/FER/EVP_txt.txt'
     batchsize_eval= 64
     val_loader = load.evp_faces_fan(video_root, video_list, 1, batchsize_eval)
-    
-    acc_epoch = val(val_loader, model, at_type)
+
+    ''' Load model '''
+    _structure = networks.resnet18_at(at_type=at_type)
+    _parameterDir = '/content/drive/MyDrive/FER/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
+    model = load.model_parameters(_structure, _parameterDir)
+
+    # last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_96.9697" # 32.512    
+    last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_100.0" # 31.034
+    x = torch.load(last_model_path)
+    model.load_state_dict(x['state_dict'])
+           
+    ''' Eval on EVP '''
+    logger.print("Start testing on EVP")
+    acc = val(val_loader, model, at_type)
 
         
         
@@ -92,12 +83,13 @@ def val(val_loader, model, at_type):
         weightmean_sourcefc = index_matrix.mm(weight_sourcefc).div(sum_alpha)
         target_vector = index_matrix.mm(target_store.unsqueeze(1)).squeeze(1).div(
             index_matrix.sum(1)).long()  # [380,21570] * [21570,1] -> [380,1] / sum([21570,1]) -> [380]
+
         if at_type == 'self-attention':
             pred_score = model(vm=weightmean_sourcefc, phrase='eval', AT_level='pred')
         if at_type == 'self_relation-attention':
             pred_score  = model(vectors=output_store_fc, vm=weightmean_sourcefc, alphas_from1=output_alpha, index_matrix=index_matrix, phrase='eval', AT_level='second_level')
 
-        acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,))
+        acc_video = util.accuracy(pred_score.cpu(), target_vector.cpu(), topk=(1,), show_confusion_matrix=True)
         topVideo.update(acc_video[0], i + 1)
         logger.print(' *Acc@Video {topVideo.avg:.3f} '.format(topVideo=topVideo))
 
