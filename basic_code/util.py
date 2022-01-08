@@ -2,14 +2,21 @@ import os
 import time
 import torch
 from pathlib import Path
+from sklearn.metrics import confusion_matrix
 
-def accuracy(output, target, topk=(1,)):
+def accuracy(output, target, topk=(1,), show_confusion_matrix=False):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
     batch_size = target.size(0)
     _, pred = output.topk(maxk, 1, True, True)  # first position is score; second position is pred.
     pred = pred.t()  # .t() is T of matrix (256 * 1) -> (1 * 256)
     correct = pred.eq(target.view(1, -1).expand_as(pred))  # target.view(1,2,2,-1): (256,) -> (1, 2, 2, 64)
+
+    if show_confusion_matrix:
+        conf_m = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6])
+        print("Confusion matrix:")
+        print(conf_m)
+        print()
 
     res = []
     for k in topk:
