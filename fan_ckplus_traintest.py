@@ -43,14 +43,15 @@ def main():
         return
     logger.print('frame attention network (fan) ck+ dataset, learning rate: {:}'.format(args.lr))
 
+    last_save_dir = None
     for epoch in range(args.epochs):
         train(train_loader, model, optimizer, epoch)
-        acc_epoch = val(val_loader, model, at_type)
+        acc_epoch = val(val_loader, model, at_type, epoch==args.epochs - 1)
         is_best = acc_epoch > best_acc
         if is_best:
             logger.print('better model!')
             best_acc = max(acc_epoch, best_acc)
-            util.save_checkpoint({
+            last_save_dir = util.save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
                 'accuracy': acc_epoch,
@@ -58,7 +59,8 @@ def main():
 
         lr_scheduler.step()
         logger.print("epoch: {:} learning rate:{:}".format(epoch+1, optimizer.param_groups[0]['lr']))
-        
+    print("Final model save path:", last_save_dir)
+    
 def train(train_loader, model, optimizer, epoch):
     losses = util.AverageMeter()
     topframe = util.AverageMeter()
