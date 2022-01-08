@@ -5,7 +5,7 @@ from pathlib import Path
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
-def accuracy(output, target, topk=(1,), show_confusion_matrix=False, write_confusion_matrix=False):
+def accuracy(logger, output, target, topk=(1,), show_confusion_matrix=False, write_confusion_matrix=False):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
     batch_size = target.size(0)
@@ -13,15 +13,16 @@ def accuracy(output, target, topk=(1,), show_confusion_matrix=False, write_confu
     pred = pred.t()  # .t() is T of matrix (256 * 1) -> (1 * 256)
     correct = pred.eq(target.view(1, -1).expand_as(pred))  # target.view(1,2,2,-1): (256,) -> (1, 2, 2, 64)
 
+    conf_m = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6])
+    conf_m_norm = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6], normalize='all')
+    conf_m_norm = np.around(conf_m_norm, 4)
+    
     if show_confusion_matrix:
-        conf_m = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6])
         print("Confusion matrix:")
         print(conf_m)
         print()
 
         print("Confusion matrix (normalized):")
-        conf_m_norm = confusion_matrix(target.cpu(), pred[0].cpu(), labels=[0,1,2,3,4,5,6], normalize='all')
-        conf_m_norm = np.around(conf_m_norm, 4)
         print(conf_m_norm)
         print()
         
