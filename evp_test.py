@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from basic_code import load, util, networks
+import sys
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def main():
@@ -18,6 +19,8 @@ def main():
                         metavar='LR', help='initial learning rate')
     parser.add_argument('-e', '--evaluate', default=False, dest='evaluate', action='store_true',
                         help='evaluate model on validation set')
+    parser.add_argument('--load_model', default="/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_100.0", type=str, help='pretrained model path')
+
     args = parser.parse_args()
     best_acc = 0
     at_type = ['self-attention', 'self_relation-attention'][args.at_type]
@@ -35,8 +38,8 @@ def main():
     model = load.model_parameters(_structure, _parameterDir)
 
     # last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_96.9697" # 32.512    
-    last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_100.0" # 31.034
-    x = torch.load(last_model_path)
+    # last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_100.0" # 31.034
+    x = torch.load(args.load_model)
     model.load_state_dict(x['state_dict'])
            
     ''' Eval on EVP '''
@@ -54,6 +57,7 @@ def val(val_loader, model, at_type):
     output_alpha    = []
     target_store = []
     index_vector = []
+    
     with torch.no_grad():
         for i, (input_var, target, index) in enumerate(val_loader):
             # compute output
@@ -95,6 +99,7 @@ def val(val_loader, model, at_type):
 
         return topVideo.avg
 
+    
 if __name__ == '__main__':
     logger = util.Logger('./log/','fan_evp')
     main()
