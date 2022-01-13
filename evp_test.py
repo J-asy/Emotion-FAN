@@ -19,7 +19,7 @@ def main():
                         metavar='LR', help='initial learning rate')
     parser.add_argument('-e', '--evaluate', default=False, dest='evaluate', action='store_true',
                         help='evaluate model on validation set')
-    parser.add_argument('--load_model', default="/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_100.0", type=str, help='pretrained model path')
+    parser.add_argument('--load_model', default="/content/drive/MyDrive/MeSelves/FER_complete/emotion-FAN/model/self_relation-attention_2_100.0", type=str, help='pretrained model path')
 
     args = parser.parse_args()
     best_acc = 0
@@ -27,14 +27,14 @@ def main():
     logger.print('The attention method is {:}'.format(at_type))
 
     ''' Load data '''
-    video_root = '/content/drive/MyDrive/FER/evp_face'
-    video_list = '/content/drive/MyDrive/FER/EVP_txt.txt'
+    video_root = '/content/drive/MyDrive/MeSelves/FER_complete/evp_face'
+    video_list = '/content/drive/MyDrive/MeSelves/FER_complete/EVP_txt.txt'
     batchsize_eval= 64
     val_loader = load.evp_faces_fan(video_root, video_list, 1, batchsize_eval)
 
     ''' Load model '''
     _structure = networks.resnet18_at(at_type=at_type)
-    _parameterDir = '/content/drive/MyDrive/FER/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
+    _parameterDir = '/content/drive/MyDrive/MeSelves/FER_complete/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
     model = load.model_parameters(_structure, _parameterDir)
 
     # last_model_path = "/content/drive/MyDrive/FER/emotion-FAN/model/self_relation-attention_2_96.9697" # 32.512    
