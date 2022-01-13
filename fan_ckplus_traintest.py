@@ -23,14 +23,14 @@ def main():
     
     logger.print('The attention method is {:}, learning rate: {:}'.format(at_type, args.lr))
     ''' Load data '''
-    video_root = '/content/drive/MyDrive/FER/ck_face'
+    video_root = '/content/drive/MyDrive/MeSelves/FER_complete/ck_face'
     video_list = './data/txt/CK+_10-fold_sample_IDascendorder_step10.txt'
     batchsize_train= 48
     batchsize_eval= 64
     train_loader, val_loader = load.ckplus_faces_fan(video_root, video_list, args.fold, batchsize_train, batchsize_eval)
     ''' Load model '''
     _structure = networks.resnet18_at(at_type=at_type)
-    _parameterDir = '/content/drive/MyDrive/FER/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
+    _parameterDir = '/content/drive/MyDrive/MeSelves/FER_complete/emotion-FAN/Resnet18_FER+_pytorch.pth.tar'
     model = load.model_parameters(_structure, _parameterDir)
     ''' Loss & Optimizer '''
     optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
